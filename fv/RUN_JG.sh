@@ -24,15 +24,21 @@ JOB=
 SVA=
 STCL=
 TCL=./jg_base.tcl.test
+PONO="1"
+YOSYS="yosys.test"
 #TCL=./jg_base.tcl
 #TCL=./jg_base_nrst.tcl
-
 SYM="0"
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
 key="$1"
 case $key in
+    --pono)
+    PONO="1"
+    shift # past argument
+    shift # past value
+    ;;
     --sym)
     #TCL="$2"
     TCL=./jg_base_nrst.tcl
@@ -86,19 +92,25 @@ if [ ! -d $JOB ]; then
     exit 0
 fi
 
-if [ ! -f "$TCL" ] || [ ! -f "$FFILE" ]; then
-    echo "[RUN_JG] $TCL or $FFILE doesn't exists! Run setup_scripts.sh first"
+if [ ! -f "$TCL" ] || [ ! -f "$FFILE" ] || [ ! -f "$YOSYS" ]; then
+    echo "[RUN_JG] $TCL or $FFILE or $YOSYS doesn't exists! Run setup_scripts.sh first"
     exit 0
 fi
+
+
 
 filename=$(basename -- "$SVA")
 extension="${filename##*.}"
 filename="${filename%.*}"
-TOPV="${JOB}/${filename}_top.sv"
+TOPV=$(realpath "${JOB}/${filename}_top.sv")
+TOPVYOSYS=$(realpath "${JOB}/${filename}_top_yosys.sv")
+echo "TOPV: $TOPV"
 TCLF="${JOB}/${filename}_.tcl"
 HDLF="${JOB}/${filename}_hdls.f"
 SETUPFILE=${JOB}/${filename}_update_file_.sh
+YOSYSF=${JOB}/${filename}_yosys.ys
 echo "[RUN_JG] $SETUPFILE"
+
 if [ -f "$SVA" ] && [ -f "$TOPFILE" ]; then
     echo "SYMBOLIC? $SYM"
     if [ "$SYM" -eq "1" ]; then
@@ -108,6 +120,7 @@ if [ -f "$SVA" ] && [ -f "$TOPFILE" ]; then
     fi 
     echo "[RUN_JG] SVA is $SVA"
     echo "[RUN_JG] HDLF is $HDLF"
+    echo "[RUN_JG] YOSYSF is $YOSYSF"
 else
     echo "[RUN_JG] $SVA or $TOPFILE doesn't exists!"
     exit 0
@@ -138,6 +151,18 @@ fi
 " > $SETUPFILE
 chmod +x $SETUPFILE
 
+if [ -f $SVA ] && [ -f $TOPFILE ]; then
+    { head -n -1 $TOPFILE; cat $FVMACRO; cat $SVA ; echo "" ; tail -n 1 $TOPFILE; } > "${TOPVYOSYS}"
+else 
+    echo \"[RUN_JG] no property at $SVA is found or no $TOPFILE\"
+    exit 0
+fi
+
+sed -i "s/assume property (\(.*\));/assume property (@(posedge clk_i) (\1));/" $TOPVYOSYS
+cp $TOPVYOSYS $TOPV
+
+sed "s~HDLS.F~${HDLF}~" $YOSYS > $YOSYSF
+sed -i "s~PATH~${JOB}/${filename}~" $YOSYSF
 
 sed "s~CSVNAME~${JOB}/${filename}~" $TCL > $TCLF
 sed -i "s~jg_hdl.f~${HDLF}~" $TCLF
@@ -191,6 +216,12 @@ fi
 
 DATE=$(date +%y-%m-%d-%H_%M_%S)
 PROJ="${JOB}/${filename}_jgsession_$DATE"
+
+if [ "$PONO" -eq "1" ]; then
+    $YOSYS_BIN -s $YOSYSF
+    $PONO_BIN ${JOB}/${filename}.btor2
+fi
+
 if [ "$gui" -eq "0" ]; then
     echo "[RUN_JG] no gui"
     echo "[RUN_JG] jg -no_gui -fpv $TCLF -proj $PROJ"
