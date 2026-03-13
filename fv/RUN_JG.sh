@@ -158,7 +158,7 @@ else
     exit 0
 fi
 
-sed -i "s/assume property (\(.*\));/assume property (@(posedge clk_i) (\1));/" $TOPVYOSYS
+sed -i "s/: assume property (\(.*\));/: assume property (@(posedge clk_i) (\1));/" $TOPVYOSYS
 cp $TOPVYOSYS $TOPV
 
 sed "s~HDLS.F~${HDLF}~" $YOSYS > $YOSYSF
