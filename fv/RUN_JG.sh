@@ -218,7 +218,9 @@ PROJ="${JOB}/${filename}_jgsession_$DATE"
 
 if [ "$PONO" -eq "1" ]; then
     $YOSYS_BIN -s $YOSYSF
-    $PONO_BIN ${JOB}/${filename}.btor2
+    for p in $(seq 0 39); do
+        time $PONO_BIN --witness -p ${p} -v 5 ${JOB}/${filename}.btor2 > ${JOB}/out/prop${p}.out 2>&1
+    done
 else
     if [ "$gui" -eq "0" ]; then
         echo "[RUN_JG] no gui"
