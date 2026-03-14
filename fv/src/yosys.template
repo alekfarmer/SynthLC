@@ -1,19 +1,11 @@
 
-# Use Verific for SystemVerilog parsing.
-# We want to keep all properties, but avoid the large SVA "checker logic"
-# networks (which can contain combinational SCCs that the BTOR backend rejects).
-# Strategy:
-# - Import with -k so Verific keeps SVA cells AND also emits Yosys $assert/$cover/$assume.
-# - Then delete the Verific SVA checker cells and clean up; the $assert/$cover remain.
-verific -f -sv2009 HDLS.F
-verific -import -k -extnets ariane
-
-# Drop Verific-generated SVA checker cell network.
-delete */t:$verific$sva_*
-delete */c:$auto$verificsva*
-clean
+read -f -sv2009 HDLS.F
 
 hierarchy -check -top ariane;
+cutpoint frontend*;
+# blackbox modules with logic loops
+cutpoint lzc*;
+cutpoint rr_arb_tree*;
 
 # prep does a conservative elaboration
 # of the top module provided
@@ -23,7 +15,6 @@ prep -top ariane;
 # of the hierarchy
 hierarchy -check;
 
-
 # If an assumption is flopped, you might
 # see strange behavior at the last state
 # (because the clock hasn't toggled)
@@ -31,26 +22,13 @@ hierarchy -check;
 # hold at every state
 chformal -assume -early;
 
-# Lower the design to a clean RTLIL netlist before any
-# "explicit clock" transformation. Running clk2fflogic
-# early (or running aggressive transforms after it) often
-# creates combinational cycles that show up as "logic loop"
-# errors in BTOR2 flows.
-#
-proc
-opt -fast
-fsm
-opt -fast
-
 # this processes memories
 # nomap means it will keep them as arrays
-memory -nomap -nordff
-opt -fast
+memory -nomap
 
 # flatten the design hierarchy
-flatten
-opt -fast
-clean
+flatten;
+opt;
 
 # (optional) uncomment and set values to simulate reset signal
 # use -resetn for an active low pin
@@ -67,17 +45,12 @@ sim -clock clk_i -resetn rst_ni -n 1 -rstlen 1 -w ariane
 # refer to "adff" or asynchronous components
 # IMPORTANT NOTE: the clocks are not
 # automatically toggled if you use this option
-#
-# Turn undriven wires into primary inputs *before* clk2fflogic.
-# Doing this afterwards can introduce new combinational paths into
-# the generated clock logic and create apparent loops.
-setundef -undriven -expose
-opt -fast
-clean
+clk2fflogic;
 
-clk2fflogic
-opt -fast
-clean
+# This turns all undriven signals into
+# inputs
+setundef -undriven -expose;
+opt;
 
 # This writes to a file in BTOR2 format
 write_btor -c PATH.btor2

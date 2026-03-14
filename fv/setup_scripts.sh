@@ -15,4 +15,4 @@ sed -i "s~HDLDIR~${HDLDIR}~" jg_base.tcl.test
 echo "[RUN_JG] Preparing hdl.f ........................................ "
 sed "s~DESIGNDIR~${DESIGNDIR}~" ${DIR}/hdl.f.template > hdl.f.test
 echo "[RUN_JG] Preparing yosys.test ........................................ "
-sed "s~DESIGNDIR~${DESIGNDIR}~" ${DIR}/yosys.template > yosys.test
+cat ${DIR}/yosys.template > yosys.test
