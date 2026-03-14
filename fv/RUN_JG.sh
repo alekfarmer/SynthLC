@@ -24,7 +24,7 @@ JOB=
 SVA=
 STCL=
 TCL=./jg_base.tcl.test
-PONO="1"
+PONO=
 YOSYS="yosys.test"
 #TCL=./jg_base.tcl
 #TCL=./jg_base_nrst.tcl
@@ -37,7 +37,6 @@ case $key in
     --pono)
     PONO="1"
     shift # past argument
-    shift # past value
     ;;
     --sym)
     #TCL="$2"
@@ -220,32 +219,32 @@ PROJ="${JOB}/${filename}_jgsession_$DATE"
 if [ "$PONO" -eq "1" ]; then
     $YOSYS_BIN -s $YOSYSF
     $PONO_BIN ${JOB}/${filename}.btor2
-fi
-
-if [ "$gui" -eq "0" ]; then
-    echo "[RUN_JG] no gui"
-    echo "[RUN_JG] jg -no_gui -fpv $TCLF -proj $PROJ"
-    jg -allow_unsupported_OS -no_gui -fpv $TCLF -proj $PROJ
-    RUNDIR="${JOB}/${filename}_rundir"
-
-    if [ ! -d $RUNDIR ]; then
-        mkdir $RUNDIR
-    fi
-    mv $PROJ $RUNDIR
-    mv $TOPV $RUNDIR
-    mv $TCLF $RUNDIR
-    mv $HDLF $RUNDIR
-    mv $SETUPFILE $RUNDIR
 else
-    echo "[RUN_JG] gui"
-    echo "[RUN_JG] jg -fpv $TCLF -proj $PROJ"
-    sed -i "s~exit~#exit~" $TCLF
-    if [ -z "$DISPLAY" ]; then
-        echo "no x server"
-        exit 1
-    else 
-        #jg -fpv $TCLF  -proj $PROJ & 
-        jg -allow_unsupported_OS -fpv $TCLF  -proj $PROJ & 
+    if [ "$gui" -eq "0" ]; then
+        echo "[RUN_JG] no gui"
+        echo "[RUN_JG] jg -no_gui -fpv $TCLF -proj $PROJ"
+        jg -allow_unsupported_OS -no_gui -fpv $TCLF -proj $PROJ
+        RUNDIR="${JOB}/${filename}_rundir"
+
+        if [ ! -d $RUNDIR ]; then
+            mkdir $RUNDIR
+        fi
+        mv $PROJ $RUNDIR
+        mv $TOPV $RUNDIR
+        mv $TCLF $RUNDIR
+        mv $HDLF $RUNDIR
+        mv $SETUPFILE $RUNDIR
+    else
+        echo "[RUN_JG] gui"
+        echo "[RUN_JG] jg -fpv $TCLF -proj $PROJ"
+        sed -i "s~exit~#exit~" $TCLF
+        if [ -z "$DISPLAY" ]; then
+            echo "no x server"
+            exit 1
+        else 
+            #jg -fpv $TCLF  -proj $PROJ & 
+            jg -allow_unsupported_OS -fpv $TCLF  -proj $PROJ & 
+        fi 
     fi 
-fi 
+fi
 

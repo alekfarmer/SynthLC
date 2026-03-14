@@ -67,7 +67,7 @@ def foo(itm):
         # run the job
         f = open(job + "/" + prefix + ".log", "w")
         subprocess.call("mkdir -p %s" % (job + "/" + prefix + "_rundir"), shell=True, stdout=f)
-        cmd = "./RUN_JG.sh -j {job} -s {filename}  -g 0".format(job = job, filename = sv_file_dir+"/"+file_name)
+        cmd = "./RUN_JG.sh --pono -j {job} -s {filename}  -g 0".format(job = job, filename = sv_file_dir+"/"+file_name)
         #cmd = "./RUN_JG.sh -j {job} -s {filename} -p tsynth/header_v2_11_inter_q_auto.sv -g 0".format(job = job, filename = sv_file_dir+"/"+file_name)
         if IFT:
             assert(not IFT_static)
