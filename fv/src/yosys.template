@@ -1,56 +1,17 @@
 
-read -f -sv2009 HDLS.F
-
-hierarchy -check -top ariane;
-cutpoint frontend*;
-# blackbox modules with logic loops
-cutpoint lzc*;
-cutpoint rr_arb_tree*;
-
-# prep does a conservative elaboration
-# of the top module provided
+read -f -formal HDLS.F
+hierarchy -check -auto-top
 prep -top ariane;
+#chformal -assume -early;
 
-# this command just does a sanity check
-# of the hierarchy
-hierarchy -check;
-
-# If an assumption is flopped, you might
-# see strange behavior at the last state
-# (because the clock hasn't toggled)
-# this command ensures that assumptions
-# hold at every state
-chformal -assume -early;
-
-# this processes memories
-# nomap means it will keep them as arrays
-memory -nomap
-
-# flatten the design hierarchy
 flatten;
-opt;
 
-# (optional) uncomment and set values to simulate reset signal
-# use -resetn for an active low pin
-# -n configures the number of cycles to simulate
-# -rstlen configures how long the reset is active (recommended to keep it active for the whole simulation)
-# -w tells it to write back the final state of the simulation as the initial state in the btor2 file
-# another useful option is -zinit which zero initializes any uninitialized state
-sim -clock clk_i -resetn rst_ni -n 1 -rstlen 1 -w ariane
-
-# (optional) use an "explicit" clock
-# e.g. every state is a half cycle of the
-# fastest clock
-# use this option if you see errors that
-# refer to "adff" or asynchronous components
-# IMPORTANT NOTE: the clocks are not
-# automatically toggled if you use this option
-clk2fflogic;
-
-# This turns all undriven signals into
-# inputs
-setundef -undriven -expose;
-opt;
-
+sim -clock clk_i -resetn rst_ni -n 2 -rstlen 2 -w
+async2sync
+opt_clean
+scc -select; simplemap; select -clear
+# setundef -undriven -expose;
+# write_rtlil rr_arb_tree.rtlil
+# write_verilog rr_arb_tree.v
 # This writes to a file in BTOR2 format
 write_btor -c PATH.btor2
