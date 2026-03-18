@@ -34,10 +34,10 @@ SOLVED_RETURN_CODES = {ReturnCode.SAT.value, ReturnCode.UNSAT.value}
 class Summary:
     """CSV summary record for a single pono run."""
 
+    pid: int
     result: str
     runtime: str
     engine: str
-    command: str
 
 
 SUMMARY_FIELDS = [field.name for field in dataclasses.fields(Summary)]
@@ -80,7 +80,7 @@ def summarize(
     engine: str,
     returncode: int,
     runtime: float,
-    cmd: list[str],
+    pid: int,
 ) -> None:
     if returncode < 0:
         signum = -returncode
@@ -97,7 +97,7 @@ def summarize(
         result=result,
         runtime=f"{runtime:.1f}",
         engine=engine,
-        command=" ".join(cmd),
+        pid=pid
     )
     with file.open("a") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=SUMMARY_FIELDS)
@@ -108,14 +108,14 @@ def clean_up(
     processes: dict[str, subprocess.Popen[str]],
     witnesses: dict[str, pathlib.Path],
     *,
-    verbose: bool,
+    verbose: int,
 ) -> None:
     for name, process in processes.items():
         if process.poll() is None:  # process has not finished yet
             process.terminate()
         if name in witnesses:
             witnesses[name].unlink(missing_ok=True)
-        if verbose and process.stderr and (stderr := process.stderr.read()):
+        if verbose > 0 and process.stderr and (stderr := process.stderr.read()):
             logger = logging.getLogger(name)
             for line in stderr.splitlines():
                 logger.warning(line)
@@ -154,7 +154,7 @@ def main() -> int:
     parser.add_argument(
         "-k", "--bound", default=2**20, type=int, help="bound to check until"
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="echo stderr")
+    parser.add_argument("-v", "--verbose", default=0, type=int, help="echo stderr")
     parser.add_argument(
         "-s",
         "--summarize",
@@ -164,11 +164,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    # Create summary file when needed, truncating if it exists.
+    # Create summary file when needed, appending if it exists.
     if args.summarize:
-        with args.summarize.open("w") as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=SUMMARY_FIELDS)
-            writer.writeheader()
+        if not args.summarize.exists():
+            with args.summarize.open("w") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=SUMMARY_FIELDS)
+                writer.writeheader()
 
     # Configure logging.
     logging.basicConfig(format="{name}: {message}", style="{")
@@ -182,14 +183,14 @@ def main() -> int:
     # Launch each portfolio solver as a subprocess.
     executable = find_executable(args.binary)
     for name, options in ENGINE_OPTIONS.items():
-        cmd = [str(executable), "-k", str(args.bound), *options, "-p", str(args.prop)]
+        cmd = [str(executable), "-k", str(args.bound), "-v", str(args.verbose), *options, "-p", str(args.prop)]
         if args.witness_file:
             with tempfile.NamedTemporaryFile(delete=False) as witness_file:
                 witnesses[name] = pathlib.Path(witness_file.name)
                 # cmd.extend(["--dump-btor2-witness", witness_file.name])
                 cmd.extend(["--dump-btor2-witness", args.witness_file])
         cmd.append(args.btor_file)
-        stderr = subprocess.PIPE if args.verbose else subprocess.DEVNULL
+        stderr = subprocess.PIPE if args.verbose > 0 else subprocess.DEVNULL
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=stderr, text=True)
         start_times[name] = time.time()
         processes[name] = proc
@@ -202,7 +203,7 @@ def main() -> int:
                 if args.summarize:
                     runtime = end_time - start_times[name]
                     cmd = cast("list[str]", process.args)
-                    summarize(args.summarize, name, process.returncode, runtime, cmd)
+                    summarize(args.summarize, name, process.returncode, runtime, args.prop)
                 if process.returncode not in SOLVED_RETURN_CODES:
                     del processes[name]
                     clean_up({name: process}, witnesses, verbose=args.verbose)

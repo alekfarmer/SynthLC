@@ -10,8 +10,6 @@ sim -clock clk_i -resetn rst_ni -n 2 -rstlen 2 -w
 async2sync
 opt_clean
 scc -select; simplemap; select -clear
-# setundef -undriven -expose;
-# write_rtlil rr_arb_tree.rtlil
-# write_verilog rr_arb_tree.v
+setundef -undriven -expose;
 # This writes to a file in BTOR2 format
 write_btor -c PATH.btor2

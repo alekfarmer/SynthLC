@@ -219,7 +219,8 @@ PROJ="${JOB}/${filename}_jgsession_$DATE"
 if [ "$PONO" -eq "1" ]; then
     $YOSYS_BIN -s $YOSYSF
     for p in $(seq 0 39); do
-        { time ./parallel_pono.py ${JOB}/${filename}.btor2 ${JOB}/out/prop${p}.witness -b $PONO_BIN -v -p ${p} -s ${JOB}/out/prop${p}.csv 2>&1 ; } > ${JOB}/out/prop${p}.out 2>&1
+        { time ./parallel_pono.py ${JOB}/${filename}.btor2 ${JOB}/out/prop${p}.witness -b $PONO_BIN -v 1 -p ${p} -s ${JOB}/out/summary.csv 2>&1 ; } > ${JOB}/out/prop${p}.out 2>&1
+        # { time $PONO_BIN -v 5 -p ${p} ${JOB}/${filename}.btor2 2>&1 ; } > ${JOB}/out/prop${p}.out 2>&1
     done
 else
     if [ "$gui" -eq "0" ]; then
