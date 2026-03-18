@@ -4,6 +4,8 @@
 This part we will walk through an example to demonstrate the properties and code bases that correspond to each step discussed in §V-B1 to §V-B5 (i.e., the flow at the top in Fig. 5 or the figure as below).
 ![](./fig/overview.png)
 
+**Note, that for the Pono Implementation, it may be neccesary to comment out or exit early from ./run_an_instn_demo.sh (line 103)due to not implementing the entire RTL2MμPATH**
+
 The example considers a `DIV` division operation as IUV and an execution assumption that `DIV` is issued right after hard reset followed by no valid instructions (we call NIA assumption in the following). 
 
 The said assumption is not necessary for execution of RTL2MμPATH; rather it is to reduce the time to run RTL2MμPATH while demostrating the full flow of RTL2MμPATH and SynthLC within a reasonable amount of time (less than a total of three hours), since under no execution assumption (as used in our case study) we will have tens of paths and tens of thousand properties generaertd and evaluated for each IUV. 

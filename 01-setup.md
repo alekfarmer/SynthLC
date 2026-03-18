@@ -3,10 +3,9 @@ This part will walk through the annotation preparation for CVA6 and formal envir
 
 ## Directory structure
 We use `$REPO` to refer to the path of the repository (`$ export REPO=<synthlc-path>`). 
-We use `$PONO_BIN` to refer to the path to your compiled pono binary (`$ export PONO_BIN=<pono-bin-path>`). 
-  - refer to https://github.com/stanford-centaur/pono/tree/main for instructions on how to install pono
+We use `$PONO_BIN` to refer to the path to your compiled pono binary (`$ export PONO_BIN=<pono-bin-path>`). Refer to https://github.com/stanford-centaur/pono/tree/main for instructions on how to install pono
 We use `$YOSYS_BIN` to refer to the path to your yoysy binary (`$ export YOSYS_BIN=<yosys-bin-path>`). 
-Also assumes that YOSYSHQ_LICENSE is already set to the path to your license for commercial yosys
+Also assumes that `$YOSYS_BIN is already set to the path to your license for commercial yosys
   - `$REPO/cva6`: 
     - Source: https://github.com/openhwgroup/cva6 at commit `#00236be`
     - Added behavior model of memory and made modification primarily in `core/{load_store_unit, store_buffer}.sv` for `CVA6 Core` evaluation in §VI such that load-store unit and committed STB are directly interfaced with the memory.
